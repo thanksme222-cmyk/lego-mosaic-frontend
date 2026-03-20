@@ -1,4 +1,4 @@
-// Preview3D.jsx
+// frontend/src/pages/Preview3D.jsx
 import React, { useState } from "react";
 import axios from "axios";
 
@@ -10,64 +10,63 @@ const Preview3D = () => {
   // Handle file selection
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
-    setMosaicUrl(""); // clear previous
   };
 
-  // Handle image upload
+  // Upload file to backend and get mosaic
   const handleUpload = async () => {
     if (!file) return alert("Please select an image first!");
-    setLoading(true);
+
+    const formData = new FormData();
+    formData.append("image", file);
 
     try {
-      const formData = new FormData();
-      formData.append("image", file); // ✅ must match Multer key
+      setLoading(true);
 
-      // Upload to backend
-      const uploadRes = await axios.post(
+      const res = await axios.post(
         "https://lego-mosaic-backend.onrender.com/upload",
         formData
       );
 
-      const filename = uploadRes.data.filename;
-
-      // Generate mosaic
-      const mosaicRes = await axios.post(
-        "https://lego-mosaic-backend.onrender.com/mosaic",
-        { imagePath: `uploads/${filename}`, size: 32 } // size = free version
+      // Set mosaic URL from backend response
+      setMosaicUrl(
+        "https://lego-mosaic-backend.onrender.com" + res.data.mosaicUrl
       );
-
-      setMosaicUrl(mosaicRes.data.mosaicUrl); // URL returned by backend
+      setLoading(false);
     } catch (err) {
-      console.error("Error uploading image:", err);
-      alert("Error processing image. Check backend logs!");
-    } finally {
+      console.error("Upload error:", err);
+      alert("Error processing image. Make sure backend is running.");
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">LEGO Mosaic Tool</h1>
+    <div style={{ padding: "20px", textAlign: "center" }}>
+      <h1>3D LEGO Mosaic Preview</h1>
 
+      {/* File input */}
       <input
         type="file"
         accept="image/*"
         onChange={handleFileChange}
-        className="mb-4"
+        style={{ margin: "10px 0" }}
       />
 
-      <button
-        onClick={handleUpload}
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-4"
-      >
+      <br />
+
+      {/* Upload button */}
+      <button onClick={handleUpload} disabled={loading}>
         {loading ? "Processing..." : "Upload & Generate Mosaic"}
       </button>
 
+      {/* Display result */}
       {mosaicUrl && (
-        <div>
-          <h2 className="text-xl font-semibold mb-2">3D Mosaic Preview:</h2>
-          <img src={mosaicUrl} alt="Mosaic" className="w-full border" />
+        <div style={{ marginTop: "20px" }}>
+          <h2>Mosaic Result</h2>
+          <img
+            src={mosaicUrl}
+            alt="Mosaic"
+            style={{ maxWidth: "80%", border: "2px solid #ccc" }}
+          />
         </div>
       )}
     </div>
